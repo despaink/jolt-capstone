@@ -9,7 +9,7 @@ provider:
 functions:
     HelloWorld:
         name: hello-world
-        description: 'An API that resturns Hello World'
+        description: 'An API that returns Hello World'
         handler: hello-world.handler
         events:
             -   http: GET /hello-world
