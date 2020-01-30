@@ -14,4 +14,11 @@ functions:
   daily:
     handler: daily.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
+  weekly:
+    handler: weekly.handle
+    role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
+  monthly:
+    handler: monthly.handle
+    role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
+
 

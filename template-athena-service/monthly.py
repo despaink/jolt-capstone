@@ -14,7 +14,7 @@ def handle(event, context):
             'Database': 'capstone'
         },
         ResultConfiguration={
-            'OutputLocation': 's3://jolt.capstone/athena-query-logs/dtest/daily',
+            'OutputLocation': 's3://jolt.capstone/athena-query-logs/dtest/monthly',
         }
     )
     print(response)   
