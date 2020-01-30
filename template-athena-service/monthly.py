@@ -4,7 +4,7 @@ import logging
 
 athena_client = boto3.client('athena')
 
-# This is the function that gets triggered on events
+# triggered at 5am on the first day of every month
 def handle(event, context):
     #        QueryString="select created interval, count(*) count from (  select substr(to_char(first_seen, 'hh24:mi'), 1, 4) || '0' created from test_timestamp ) group by created order by created;",
 
