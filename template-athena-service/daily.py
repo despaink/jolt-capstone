@@ -5,15 +5,11 @@ from datetime import date
 
 athena_client = boto3.client('athena')
 
-# Requires:
-#   date
-#   storeName
-
 # triggered at 5am every morning
 def handle(event, context):
     # extract these from event
     storeName = 'store_name_1'  
-    today = date.today().strftime('%y-%m-%d')
+    today = date.today().strftime('%Y-%m-%d')
 
     baseOutputLocation = f's3://jolt.capstone/athena-query-logs/{storeName}'
 
