@@ -9,26 +9,26 @@ athena_client = boto3.client('athena')
 def handle(event, context):
     # extract these from event
     storeName = 'store_name_1'  
-    today = ( date.today() - timedelta(days=1) ).strftime('%Y-%m-%d')
+    day = ( date.today() - timedelta(days=1) ).strftime('%Y-%m-%d')
 
     baseOutputLocation = f's3://jolt.capstone/athena-query-logs/{storeName}'
 
-    response = uniquePerHour(today, baseOutputLocation)
+    response = uniquePerHour(storeName, day, baseOutputLocation)
     print(response)
     return response
 
 
-def uniquePerHour(today, baseInputLocation):
+def uniquePerHour(storeName, day, baseInputLocation):
     # WHERE clause is hard-coded with the only day we have data for
     athenaQuery = (
         "SELECT date_trunc('hour', first_seen) time, Count(*) visits "
-		"FROM store_name_1 "
-        f"WHERE DATE(first_seen)=DATE('2019-12-12') "
+		f"FROM {storeName} "
+        "WHERE DATE(first_seen)=DATE('2019-12-12') "
 		"GROUP BY date_trunc('hour', first_seen) "
 		"ORDER BY date_trunc('hour', first_seen)"
-        )
+    )
     
-    outputLocation = f'{baseInputLocation}/unique_per_hour/{today}'
+    outputLocation = f'{baseInputLocation}/unique_per_hour/{day}'
 
     response = athena_client.start_query_execution(
         QueryString = athenaQuery,
