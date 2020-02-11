@@ -7,7 +7,7 @@ athena_client = boto3.client('athena')
 
 # triggered at 5am every morning
 def handle(event, context):
-    # extract these from event
+    # extract storeName from event?
     storeName = 'store_name_1'  
     day = ( date.today() - timedelta(days=1) ).strftime('%Y-%m-%d')
 
@@ -18,7 +18,7 @@ def handle(event, context):
     return response
 
 
-def uniquePerHour(storeName, day, baseInputLocation):
+def uniquePerHour(storeName, day, baseOutputLocation):
     # WHERE clause is hard-coded with the only day we have data for
     athenaQuery = (
         "SELECT date_trunc('hour', first_seen) time, Count(*) visits "
@@ -28,7 +28,7 @@ def uniquePerHour(storeName, day, baseInputLocation):
 		"ORDER BY date_trunc('hour', first_seen)"
     )
     
-    outputLocation = f'{baseInputLocation}/unique_per_hour/{day}'
+    outputLocation = f'{baseOutputLocation}/unique_per_hour/{day}'
 
     response = athena_client.start_query_execution(
         QueryString = athenaQuery,
