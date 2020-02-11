@@ -31,7 +31,7 @@ def uniquePerHour(today, baseInputLocation):
 		"ORDER BY date_trunc('hour', first_seen)"
         )
     
-    outputLocation = baseInputLocation + 'unique_per_hour/'
+    outputLocation = f'{baseInputLocation}/unique_per_hour/{today}/'
 
     response = athena_client.start_query_execution(
         QueryString = athenaQuery,
