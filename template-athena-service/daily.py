@@ -15,7 +15,7 @@ def handle(event, context):
     storeName = 'store_name_1'  
     today = date.today().strftime('%y-%m-%d')
 
-    baseOutputLocation = f's3://jolt.capstone/athena-query-logs/{storeName}/'
+    baseOutputLocation = f's3://jolt.capstone/athena-query-logs/{storeName}'
 
     response = uniquePerHour(today, baseOutputLocation)
     print(response)
@@ -31,7 +31,7 @@ def uniquePerHour(today, baseInputLocation):
 		"ORDER BY date_trunc('hour', first_seen)"
         )
     
-    outputLocation = f'{baseInputLocation}/unique_per_hour/{today}/'
+    outputLocation = f'{baseInputLocation}/unique_per_hour/{today}'
 
     response = athena_client.start_query_execution(
         QueryString = athenaQuery,
