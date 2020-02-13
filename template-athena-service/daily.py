@@ -9,7 +9,7 @@ athena_client = boto3.client('athena')
 def handle(event, context):
     # extract storeName from event?
     storeName = 'store_name_1'  
-    day = ( date.today() - timedelta(days=1) ).strftime('%Y-%m-%d')
+    day = ( date.today() - timedelta(1) ).strftime('%Y-%m-%d')
 
     baseOutputLocation = f's3://jolt.capstone/athena-query-logs/{storeName}'
 
