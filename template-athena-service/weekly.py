@@ -20,7 +20,7 @@ def handle(event, context):
 
 def uniquePerDay(storeName, day, baseOutputLocation):
     weekEnd = day.strftime('%Y-%m-%d')
-    weekStart = day - timedelta(7).strftime('%Y-%m-%d')
+    weekStart = ( day - timedelta(7) ).strftime('%Y-%m-%d')
     athenaQuery = (
         "SELECT date(date_trunc('day', first_seen)) time, Count(*) visits "
 		f"FROM {storeName} "
