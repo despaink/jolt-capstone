@@ -29,7 +29,7 @@ def uniquePerDay(storeName, day, baseOutputLocation):
 		"ORDER BY date_trunc('day', first_seen)"
     )
 
-    outputLocation = f'{baseOutputLocation}/unique_per_hour/{day}'
+    outputLocation = f'{baseOutputLocation}/unique_per_day_by_week/{day}'
 
     response = athena_client.start_query_execution(
         QueryString = athenaQuery,
