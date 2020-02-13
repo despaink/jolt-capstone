@@ -1,7 +1,7 @@
 import json
 import boto3
 import logging
-from datetime import date
+from datetime import date, timedelta
 
 athena_client = boto3.client('athena')
 
@@ -18,11 +18,11 @@ def handle(event, context):
     return response 
 
 
-def uniquePerDay(storeName, day, baseOutputLocation): # not completed
-    weekStart = ''
-    weekEnd = ''
+def uniquePerDay(storeName, day, baseOutputLocation):
+    weekEnd = day.strftime('%Y-%m-%d')
+    weekStart = day - timedelta(7).strftime('%Y-%m-%d')
     athenaQuery = (
-        "SELECT date_trunc('day', first_seen) time, Count(*) visits "
+        "SELECT date(date_trunc('day', first_seen)) time, Count(*) visits "
 		f"FROM {storeName} "
         f"WHERE DATE(first_seen) BETWEEN DATE({weekStart}) AND DATE({weekEnd})"
 		"GROUP BY date_trunc('day', first_seen) "
