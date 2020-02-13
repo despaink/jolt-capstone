@@ -19,11 +19,10 @@ def handle(event, context):
 
 
 def uniquePerHour(storeName, day, baseOutputLocation):
-    # WHERE clause is hard-coded with the only day we have data for
     athenaQuery = (
         "SELECT date_trunc('hour', first_seen) time, Count(*) visits "
 		f"FROM {storeName} "
-        "WHERE DATE(first_seen)=DATE('2019-12-12') "
+        "WHERE DATE(first_seen)=DATE('${day}') "
 		"GROUP BY date_trunc('hour', first_seen) "
 		"ORDER BY date_trunc('hour', first_seen)"
     )
