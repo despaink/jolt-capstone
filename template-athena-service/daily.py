@@ -44,7 +44,7 @@ def uniquePerHour(storeName, day):
     query = (
         "SELECT date_trunc('hour', first_seen) time, Count(*) visits "
 		f"FROM {storeName} "
-        "WHERE DATE(first_seen)=DATE('${day}') "
+        f"WHERE DATE(first_seen)=DATE('${day}') "
 		"GROUP BY date_trunc('hour', first_seen) "
 		"ORDER BY date_trunc('hour', first_seen)"
     )
