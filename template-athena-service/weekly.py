@@ -70,7 +70,7 @@ def totalUnique(store, day):
 def repeatPerDay(store, day):
     query = (
         "SELECT date(date_trunc('day', first_seen)) time, Count(*) visits "
-		f"FROM {storeName} "
+		f"FROM {store} "
         f"WHERE extract(week FROM first_seen)=extract(week FROM DATE('{day}'))"
 		"GROUP BY date_trunc('day', first_seen) "
 		"ORDER BY date_trunc('day', first_seen)"
