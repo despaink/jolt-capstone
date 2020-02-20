@@ -48,7 +48,7 @@ def uniquePerHour(storeName, day):
 		"GROUP BY date_trunc('hour', first_seen) "
 		"ORDER BY date_trunc('hour', first_seen)"
     )
-    outputLocation = constructOutputLocation(storeName, 'daily_unique_per_hour', day)
+    outputLocation = constructOutputLocation(storeName, 'unique_per_hour', day)
     return executeQuery(query, outputLocation)
 
 
