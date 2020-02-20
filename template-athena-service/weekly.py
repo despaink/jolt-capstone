@@ -54,7 +54,7 @@ def uniquePerDay(storeName, day):
     return executeQuery(query, outputLocation)
 
 
-# customers
+# total number of unique mac addresses that have appeared during the scans
 def totalUnique(store, day): 
     query = (
         "SELECT COUNT(DISTINCT mac) visits "
@@ -65,15 +65,21 @@ def totalUnique(store, day):
     return executeQuery(query, outputLocation)
 
 
-# This is currently the same as uniquePerDay, so
-# TODO: get this to select repeat customers
+# Lists the number of mac addresses per day that appeared more than once in that week
 def repeatPerDay(store, day):
     query = (
         "SELECT date(date_trunc('day', first_seen)) time, Count(*) visits "
-		f"FROM {store} "
-        f"WHERE extract(week FROM first_seen)=extract(week FROM DATE('{day}'))"
-		"GROUP BY date_trunc('day', first_seen) "
-		"ORDER BY date_trunc('day', first_seen)"
+        "FROM ( "
+            "SELECT *, COUNT(*) visits "
+            f"FROM {store} "
+            f"WHERE extract(week FROM first_seen)=extract(week FROM DATE('{day}')) "
+            "GROUP BY mac, first_seen, last_seen, power "
+            "HAVING COUNT(*) > 1 "
+            "ORDER BY COUNT(*) DESC "
+        ") "
+        f"WHERE extract(week FROM first_seen)=extract(week FROM DATE('{day}')) "
+        "GROUP BY date_trunc('day', first_seen) "
+        "ORDER BY date_trunc('day', first_seen)"
     )
     outputLocation = constructOutputLocation(store, 'weekly_repeat_by_day', day)
     return executeQuery(query, outputLocation)
