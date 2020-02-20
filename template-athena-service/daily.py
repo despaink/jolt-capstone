@@ -16,10 +16,14 @@ def handle(event, context):
     responses.append(uniquePerHour(storeName, day))
     responses.append(totalUnique(storeName, day))
     responses.append(repeatByMac(storeName, day))
+    responses.append(averageVisitDurationInMinutes(storeName, day))
+    
     print(responses)
     return responses
 
-
+# # # # # # # # # # # # # # # # # # 
+# Helper functions
+# # # # # # # # # # # # # # # # # # 
 def executeQuery(query, outputLocation):
     return athena_client.start_query_execution(
         QueryString = query,
@@ -31,7 +35,9 @@ def executeQuery(query, outputLocation):
 def constructOutputLocation(storeName, queryName, day):
     return f's3://jolt.capstone/athena-query-logs/{storeName}/{queryName}/{day}'
 
-
+# # # # # # # # # # # # # # # # # # 
+# Query functions
+# # # # # # # # # # # # # # # # # # 
 def uniquePerHour(storeName, day):
     query = (
         "SELECT date_trunc('hour', first_seen) time, Count(*) visits "
@@ -64,4 +70,14 @@ def repeatByMac(storeName, day):
         "ORDER BY COUNT(*) DESC"
     )
     outputLocation = constructOutputLocation(storeName, 'repeat_by_mac', day)
+    return executeQuery(query, outputLocation)
+
+
+def averageVisitDurationInMinutes(storeName, day): 
+    query = (
+        "SELECT avg(date_diff('minute', first_seen, last_seen)) duration "
+        f"FROM {storeName} "
+        f"WHERE date(first_seen)=date('{day}')"
+    )
+    outputLocation = constructOutputLocation(storeName, 'avg-duration-min', day)
     return executeQuery(query, outputLocation)
