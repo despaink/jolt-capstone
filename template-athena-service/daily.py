@@ -10,12 +10,14 @@ def handle(event, context):
     # extract storeName from event?
     storeName = 'store_name_1'  
     day = ( date.today() - timedelta(1) ).strftime('%Y-%m-%d')
-
-    response = uniquePerHour(storeName, day)
-    response += '\n\n' + totalUnique(storeName, day)
-    response += '\n\n' + repeatByMac(storeName, day)
-    print(response)
-    return response
+    
+    responses = []
+    
+    responses.append(uniquePerHour(storeName, day))
+    responses.append(totalUnique(storeName, day))
+    responses.append(repeatByMac(storeName, day))
+    print(responses)
+    return responses
 
 
 def executeQuery(query, outputLocation):
