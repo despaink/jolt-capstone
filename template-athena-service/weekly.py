@@ -1,7 +1,7 @@
 import json
 import boto3
 import logging
-from datetime import date, timedelta
+from datetime import date
 
 athena_client = boto3.client('athena')
 
@@ -11,29 +11,51 @@ def handle(event, context):
     storeName = 'store_name_1'
     day = date.today()
 
-    baseOutputLocation = f's3://jolt.capstone/athena-query-logs/{storeName}'
+    responses = []
+    
+    responses.append(uniquePerDay(storeName, day))
+    responses.append(totalUnique(storeName, day))
+    
+    print(responses)
+    return responses
 
-    response = uniquePerDay(storeName, day, baseOutputLocation)
-    print(response)   
-    return response 
+
+# # # # # # # # # # # # # # # # # # 
+# Helper functions
+# # # # # # # # # # # # # # # # # # 
+def executeQuery(query, outputLocation):
+    return athena_client.start_query_execution(
+        QueryString = query,
+        QueryExecutionContext = { 'Database': 'capstone' },
+        ResultConfiguration = { 'OutputLocation': outputLocation }
+    )
 
 
-def uniquePerDay(storeName, day, baseOutputLocation):
-    weekEnd = day.strftime('%Y-%m-%d')
-    weekStart = ( day - timedelta(7) ).strftime('%Y-%m-%d')
-    athenaQuery = (
+def constructOutputLocation(storeName, queryName, day):
+    return f's3://jolt.capstone/athena-query-logs/{storeName}/{queryName}/{day}'
+
+
+# # # # # # # # # # # # # # # # # # 
+# Query functions
+# # # # # # # # # # # # # # # # # # 
+def uniquePerDay(storeName, day):
+    query = (
         "SELECT date(date_trunc('day', first_seen)) time, Count(*) visits "
 		f"FROM {storeName} "
-        f"WHERE DATE(first_seen) BETWEEN DATE({weekStart}) AND DATE({weekEnd})"
+        f"WHERE extract(week FROM first_seen)=extract(week FROM DATE('{day}'))"
 		"GROUP BY date_trunc('day', first_seen) "
 		"ORDER BY date_trunc('day', first_seen)"
     )
 
-    outputLocation = f'{baseOutputLocation}/unique_per_day_by_week/{day}'
+    outputLocation = constructOutputLocation(storeName, 'unique_per_day_by_week', day)
+    return executeQuery(query, outputLocation)
 
-    response = athena_client.start_query_execution(
-        QueryString = athenaQuery,
-        QueryExecutionContext = { 'Database': 'capstone' },
-        ResultConfiguration = { 'OutputLocation': outputLocation }
+
+def totalUnique(store, day): 
+    query = (
+        "SELECT COUNT(DISTINCT mac) "
+        f"FROM {store} "
+        f"WHERE extract(week FROM first_seen)=extract(week FROM DATE('{day}'))"
     )
-    return response
+    outputLocation = constructOutputLocation(store, 'weekly_total_unique', day)
+    return executeQuery(query, outputLocation)
