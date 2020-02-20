@@ -21,6 +21,7 @@ def handle(event, context):
     print(responses)
     return responses
 
+
 # # # # # # # # # # # # # # # # # # 
 # Helper functions
 # # # # # # # # # # # # # # # # # # 
@@ -35,6 +36,7 @@ def executeQuery(query, outputLocation):
 def constructOutputLocation(storeName, queryName, day):
     return f's3://jolt.capstone/athena-query-logs/{storeName}/{queryName}/{day}'
 
+
 # # # # # # # # # # # # # # # # # # 
 # Query functions
 # # # # # # # # # # # # # # # # # # 
@@ -46,7 +48,7 @@ def uniquePerHour(storeName, day):
 		"GROUP BY date_trunc('hour', first_seen) "
 		"ORDER BY date_trunc('hour', first_seen)"
     )
-    outputLocation = constructOutputLocation(storeName, 'unique_per_hour', day)
+    outputLocation = constructOutputLocation(storeName, 'daily_unique_per_hour', day)
     return executeQuery(query, outputLocation)
 
 
@@ -56,7 +58,7 @@ def totalUnique(storeName, day):
         f"FROM {storeName} "
         f"WHERE DATE(first_seen)=DATE('{day}')"
     )
-    outputLocation = constructOutputLocation(storeName, 'total_unique', day)
+    outputLocation = constructOutputLocation(storeName, 'daily_total_unique', day)
     return executeQuery(query, outputLocation)
 
 
@@ -69,7 +71,7 @@ def repeatByMac(storeName, day):
         "HAVING COUNT(*) > 1 "
         "ORDER BY COUNT(*) DESC"
     )
-    outputLocation = constructOutputLocation(storeName, 'repeat_by_mac', day)
+    outputLocation = constructOutputLocation(storeName, 'daily_repeat_by_mac', day)
     return executeQuery(query, outputLocation)
 
 
@@ -79,5 +81,5 @@ def averageVisitDurationInMinutes(storeName, day):
         f"FROM {storeName} "
         f"WHERE date(first_seen)=date('{day}')"
     )
-    outputLocation = constructOutputLocation(storeName, 'avg-duration-min', day)
+    outputLocation = constructOutputLocation(storeName, 'daily_avg_duration', day)
     return executeQuery(query, outputLocation)
