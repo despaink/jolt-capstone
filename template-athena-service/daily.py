@@ -12,6 +12,8 @@ def handle(event, context):
     day = ( date.today() - timedelta(1) ).strftime('%Y-%m-%d')
 
     response = uniquePerHour(storeName, day)
+    response += '\n\n' + totalUnique(storeName, day)
+    response += '\n\n' + repeatByMac(storeName, day)
     print(response)
     return response
 
@@ -40,7 +42,7 @@ def uniquePerHour(storeName, day):
     return executeQuery(query, outputLocation)
 
 
-def totalUnique(storeName, day, baseOutputLocation):
+def totalUnique(storeName, day):
     query = (
         "SELECT COUNT(DISTINCT mac) unique_devices "
         f"FROM {storeName} "
@@ -50,7 +52,7 @@ def totalUnique(storeName, day, baseOutputLocation):
     return executeQuery(query, outputLocation)
 
 
-def repeatByMac(storeName, day, baseOutputLocation):
+def repeatByMac(storeName, day):
     query = (
         "SELECT mac, COUNT(*) visits "
         f"FROM {storeName} "
