@@ -57,7 +57,7 @@ def uniquePerDay(storeName, day):
 # customers
 def totalUnique(store, day): 
     query = (
-        "SELECT COUNT(DISTINCT mac) visits"
+        "SELECT COUNT(DISTINCT mac) visits "
         f"FROM {store} "
         f"WHERE extract(week FROM first_seen)=extract(week FROM DATE('{day}'))"
     )
