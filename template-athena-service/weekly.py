@@ -15,8 +15,9 @@ def handle(event, context):
     
     responses.append(uniquePerDay(storeName, day))
     responses.append(totalUnique(storeName, day))
-    responses.append(averageVisitDurationInMinutes(storeName, day))
+    responses.append(repeatPerDay(storeName, day))
     responses.append(totalRepeat(storeName, day))
+    responses.append(averageVisitDurationInMinutes(storeName, day))
     
     print(responses)
     return responses
