@@ -52,9 +52,10 @@ def uniquePerHour(storeName, day):
     return executeQuery(query, outputLocation)
 
 
+# customers
 def totalUnique(storeName, day):
     query = (
-        "SELECT COUNT(DISTINCT mac) unique_devices "
+        "SELECT COUNT(DISTINCT mac) visits "
         f"FROM {storeName} "
         f"WHERE DATE(first_seen)=DATE('{day}')"
     )
