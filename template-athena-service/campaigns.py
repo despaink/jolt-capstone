@@ -1,25 +1,33 @@
 import json
 import boto3
 import logging
+import time
+import csv
 from datetime import date, timedelta
 
 athena_client = boto3.client('athena')
+s3_client = boto3.client('s3')
 
 # triggered at 5am every morning
 def handle(event, context):
     # extract storeName from event?
-    storeName = 'store_name_1'  
-    day = ( date.today() - timedelta(1) ).strftime('%Y-%m-%d')
+    campaignName = event.campaignName
+    campaignType = event.campaignType
+    campaignStart = event.campaignStart
+    campaignEnd = event.campaignEnd
+    storeName = event.storeName
+    createdDate = (date.today()).strftime('%Y-%m-%d')
     
     responses = []
-    
-    responses.append(uniquePerHour(storeName, day))
-    responses.append(totalUnique(storeName, day))
-    responses.append(repeatByMac(storeName, day))
-    responses.append(averageVisitDurationInMinutes(storeName, day))
+
+    if campaignType == "compareAll":
+      responses.append(compareAllCampaign(storeName, campaignName, campaignStart, campaignEnd))
     
     print(responses)
-    return responses
+    return {
+        'statusCode': 200,
+        'body': responses
+    }
 
 
 # # # # # # # # # # # # # # # # # # 
@@ -33,54 +41,57 @@ def executeQuery(query, outputLocation):
     )
 
 
-def constructOutputLocation(storeName, queryName, day):
-    return f's3://jolt.capstone/athena-query-logs/{storeName}/{queryName}/{day}'
+def constructOutputLocation(storeName, campaignName):
+    return f's3://jolt.capstone/athena-query-logs/{storeName}/campaigns/{campaignName}'
+
+def waitForFinish(queryId):
+  state = 'RUNNING'
+  while (state == 'RUNNING'):
+    response = athena_client.get_query_execution(queryId)
+    if 'QueryExecution' in response and \
+              'Status' in response['QueryExecution'] and \
+              'State' in response['QueryExecution']['Status']:
+          state = response['QueryExecution']['Status']['State']
+          if state == 'FAILED':
+              return False
+          elif state == 'SUCCEEDED':
+              return athena_client.get_query_results(queryId)
+    time.sleep(1)
 
 
 # # # # # # # # # # # # # # # # # # 
 # Query functions
 # # # # # # # # # # # # # # # # # # 
-def uniquePerHour(storeName, day):
-    query = (
-        "SELECT date_trunc('hour', first_seen) time, Count(*) visits "
+
+def compareAllCampaign(storeName, campaignName, start, end):
+    query1 = (
+        "SELECT date(date_trunc('day', first_seen)) time, Count(*) visits "
 		f"FROM {storeName} "
-        f"WHERE DATE(first_seen)=DATE('{day}') "
+        f"WHERE DATE(first_seen) BETWEEN DATE('{start}') and DATE('{end}') "
 		"GROUP BY date_trunc('hour', first_seen) "
 		"ORDER BY date_trunc('hour', first_seen)"
     )
-    outputLocation = constructOutputLocation(storeName, 'unique_per_hour', day)
-    return executeQuery(query, outputLocation)
-
-
-# customers
-def totalUnique(storeName, day):
-    query = (
-        "SELECT COUNT(DISTINCT mac) visits "
-        f"FROM {storeName} "
-        f"WHERE DATE(first_seen)=DATE('{day}')"
+    outputLocation = constructOutputLocation(storeName, campaignName)
+    queryId1 = executeQuery(query1, outputLocation)
+    
+    query2 = (
+        "SELECT date(date_trunc('day', first_seen)) time, Count(*) visits "
+		f"FROM {storeName} "
+		"GROUP BY date_trunc('hour', first_seen) "
+		"ORDER BY date_trunc('hour', first_seen)"
     )
-    outputLocation = constructOutputLocation(storeName, 'daily_total_unique', day)
-    return executeQuery(query, outputLocation)
+    queryId2 = executeQuery(query2, outputLocation)
 
 
-def repeatByMac(storeName, day):
-    query = (
-        "SELECT mac, COUNT(*) visits "
-        f"FROM {storeName} "
-        f"WHERE DATE(first_seen)=DATE('{day}') "
-        "GROUP BY mac "
-        "HAVING COUNT(*) > 1 "
-        "ORDER BY COUNT(*) DESC"
-    )
-    outputLocation = constructOutputLocation(storeName, 'daily_repeat_by_mac', day)
-    return executeQuery(query, outputLocation)
+    results1 = waitForFinish(queryId1)['ResultSet']['Rows']
+    results2 = waitForFinish(queryId2)['ResultSet']['Rows']
 
+    file1 = open('file1.csv', 'w')
+    with file1:
+      writer = csv.writer(file1)
+      for row in results1:
+        writer.writerow(row)
 
-def averageVisitDurationInMinutes(storeName, day): 
-    query = (
-        "SELECT avg(date_diff('minute', first_seen, last_seen)) duration "
-        f"FROM {storeName} "
-        f"WHERE date(first_seen)=date('{day}')"
-    )
-    outputLocation = constructOutputLocation(storeName, 'daily_avg_duration', day)
-    return executeQuery(query, outputLocation)
+    s3_client.upload_file(file1, "s3://jolt.capstone", outputLocation + "target")
+    s3_client.upload_file(file1, "s3://jolt.capstone", outputLocation + "compare")
+    return 1
