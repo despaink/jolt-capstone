@@ -29,6 +29,7 @@ def handle(event, context):
         'body': responses,
         "headers": { 
             "Access-Control-Allow-Origin": "*" 
+        }
     }
 
 
