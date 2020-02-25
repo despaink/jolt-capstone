@@ -11,32 +11,37 @@ functions:
   athena:
     handler: template.template
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
-    events:
-        - cloudwatchLog: '/aws/lambda/template'
+    #events:
+        #- schedule: cron(0 5 * * ? *)
+          # for cron syntax see: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html#CronExpressions 
+        #- cloudwatchLog: '/aws/lambda/template-athena-service-dev'
 
   daily:
     handler: daily.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     events:
-        - cloudwatchLog: '/aws/lambda/daily'
+        - schedule: cron(0 5 * * ? *)
+        #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-daily'
 
   weekly:
     handler: weekly.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     events:
-        - cloudwatchLog: '/aws/lambda/weekly'
+        - schedule: cron(0 4 * * SUN *)
+        #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-weekly'
 
   monthly:
     handler: monthly.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     events:
-        - cloudwatchLog: '/aws/lambda/monthly'
+        - schedule: cron(0 3 1 * ? *)
+        #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-monthly'
 
   campaigns:
     handler: campaigns.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     events:
         -   http: POST /campaign
-        - cloudwatchLog: '/aws/lambda/campaign'
+        #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-campaigns'
 
 
