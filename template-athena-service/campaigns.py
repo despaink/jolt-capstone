@@ -26,7 +26,9 @@ def handle(event, context):
     print(responses)
     return {
         'statusCode': 200,
-        'body': responses
+        'body': responses,
+        "headers": { 
+            "Access-Control-Allow-Origin": "*" 
     }
 
 
