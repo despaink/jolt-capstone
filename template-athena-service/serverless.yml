@@ -11,19 +11,32 @@ functions:
   athena:
     handler: template.template
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
+    events:
+        - cloudwatchLog: '/aws/lambda/template'
+
   daily:
     handler: daily.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
+    events:
+        - cloudwatchLog: '/aws/lambda/daily'
+
   weekly:
     handler: weekly.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
+    events:
+        - cloudwatchLog: '/aws/lambda/weekly'
+
   monthly:
     handler: monthly.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
+    events:
+        - cloudwatchLog: '/aws/lambda/monthly'
+
   campaigns:
     handler: campaigns.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     events:
         -   http: POST /campaign
+        - cloudwatchLog: '/aws/lambda/campaign'
 
 
