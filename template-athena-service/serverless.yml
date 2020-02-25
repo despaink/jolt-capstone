@@ -13,6 +13,7 @@ functions:
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     #events:
         #- schedule: cron(0 5 * * ? *)
+          # cron(MIN HOUR DayMonth Month WeekDay Year)
           # for cron syntax see: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html#CronExpressions 
         #- cloudwatchLog: '/aws/lambda/template-athena-service-dev'
 
@@ -20,21 +21,21 @@ functions:
     handler: daily.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     events:
-        - schedule: cron(0 5 * * ? *)
+        - schedule: cron(0 5 * * ? *) # everyday at 5AM
         #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-daily'
 
   weekly:
     handler: weekly.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     events:
-        - schedule: cron(0 4 * * SUN *)
+        - schedule: cron(0 4 ? * SUN *) # every week at 4AM on sunday
         #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-weekly'
 
   monthly:
     handler: monthly.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     events:
-        - schedule: cron(0 3 1 * ? *)
+        - schedule: cron(0 3 1 * ? *) # on the first day of every month at 3AM
         #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-monthly'
 
   campaigns:
