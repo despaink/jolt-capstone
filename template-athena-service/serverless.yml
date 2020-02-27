@@ -42,7 +42,10 @@ functions:
     handler: campaigns.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     events:
-        -   http: POST /campaign
+        - http: 
+            path: campaign
+            method: GET
+            cors: true
         #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-campaigns'
 
 
