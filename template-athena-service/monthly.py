@@ -5,7 +5,7 @@ from datetime import date
 
 athena_client = boto3.client('athena')
 
-# triggered at 5am on the first day of every month
+# triggered at 3am on the first day of every month
 def handle(event, context):
     store = 'store_name_1'
     day = date.today()

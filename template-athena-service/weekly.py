@@ -5,7 +5,7 @@ from datetime import date
 
 athena_client = boto3.client('athena')
 
-# triggered at 5am every Sunday
+# triggered at 4am every Sunday
 def handle(event, context):
     # TODO: extract storeName from event
     storeName = 'store_name_1'
