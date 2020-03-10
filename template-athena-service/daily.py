@@ -53,7 +53,7 @@ def joinDailyRecords(storeName, day):
 
 
 def addPartition(storeName, day):
-    query = f"ALTER TABLE castone.{storeName}_intermediate ADD PARTITION (dt={day}) location 's3://jolt.capstone/athena-query-logs/{storeName}_intermediate/"
+    query = f"ALTER TABLE capstone.{storeName}_intermediate ADD IF NOT EXISTS PARTITION (dt='{day}') location 's3://jolt.capstone/athena-query-logs/{storeName}_intermediate/'"
     outputLocation = f's3://jolt.capstone/athena-query-logs/{storeName}/partition-logs/dt={day}/'
     return executeQuery(query, outputLocation)
 
