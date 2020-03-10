@@ -8,11 +8,12 @@ athena_client = boto3.client('athena')
 # triggered at 5am every morning
 def handle(event, context):
     # extract storeName from event?
-    storeName = 'store_name_1'  
+    storeName = 'store_name_1'
     day = ( date.today() - timedelta(1) ).strftime('%Y-%m-%d')
     
     responses = []
-    
+    responses.append(joinDailyRecords(storeName, day))
+    responses.append(addPartitions(storeName))
     responses.append(uniquePerHour(storeName, day))
     responses.append(totalUnique(storeName, day))
     responses.append(repeatByMac(storeName, day))
@@ -40,11 +41,26 @@ def constructOutputLocation(storeName, queryName, day):
 # # # # # # # # # # # # # # # # # # 
 # Query functions
 # # # # # # # # # # # # # # # # # # 
+def joinDailyRecords(storeName, day): 
+    query = (
+        "SELECT mac, min(first_seen), max(last_seen), power "
+        f"FROM {storeName} "
+        f"WHERE date(first_seen)=date('{day}') and date(last_seen)=date('{day}') "
+        "GROUP BY mac, power"
+    )
+    outputLocation = f's3://jolt.capstone/athena-query-logs/{storeName}/intermediate/dt={day}/daily_joined/'
+    return executeQuery(query, outputLocation)
+
+
+def addPartitions(storeName):
+    query = f'MSCK REPAIR TABLE captone.{storeName}'
+
+
 def uniquePerHour(storeName, day):
     query = (
         "SELECT date_trunc('hour', first_seen) time, Count(*) visits "
-		f"FROM {storeName} "
-        f"WHERE DATE(first_seen)=DATE('{day}') "
+		f"FROM {storeName}_intermediate "
+        f"WHERE dt=DATE('{day}') "
 		"GROUP BY date_trunc('hour', first_seen) "
 		"ORDER BY date_trunc('hour', first_seen)"
     )
@@ -56,8 +72,8 @@ def uniquePerHour(storeName, day):
 def totalUnique(storeName, day):
     query = (
         "SELECT COUNT(DISTINCT mac) visits "
-        f"FROM {storeName} "
-        f"WHERE DATE(first_seen)=DATE('{day}')"
+        f"FROM {storeName}_intermediate "
+        f"WHERE dt=DATE('{day}')"
     )
     outputLocation = constructOutputLocation(storeName, 'daily_total_unique', day)
     return executeQuery(query, outputLocation)
@@ -66,8 +82,8 @@ def totalUnique(storeName, day):
 def repeatByMac(storeName, day):
     query = (
         "SELECT mac, COUNT(*) visits "
-        f"FROM {storeName} "
-        f"WHERE DATE(first_seen)=DATE('{day}') "
+        f"FROM {storeName}_intermediate "
+        f"WHERE dt=DATE('{day}') "
         "GROUP BY mac "
         "HAVING COUNT(*) > 1 "
         "ORDER BY COUNT(*) DESC"
@@ -79,8 +95,8 @@ def repeatByMac(storeName, day):
 def averageVisitDurationInMinutes(storeName, day): 
     query = (
         "SELECT avg(date_diff('minute', first_seen, last_seen)) duration "
-        f"FROM {storeName} "
-        f"WHERE date(first_seen)=date('{day}')"
+        f"FROM {storeName}_intermediate "
+        f"WHERE dt=date('{day}')"
     )
     outputLocation = constructOutputLocation(storeName, 'daily_avg_duration', day)
     return executeQuery(query, outputLocation)
