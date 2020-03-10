@@ -13,7 +13,7 @@ def handle(event, context):
     
     responses = []
     responses.append(joinDailyRecords(storeName, day))
-    responses.append(addPartitions(storeName, day))
+    responses.append(addPartition(storeName, day))
     responses.append(uniquePerHour(storeName, day))
     responses.append(totalUnique(storeName, day))
     responses.append(repeatByMac(storeName, day))
