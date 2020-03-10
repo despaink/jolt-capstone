@@ -13,7 +13,7 @@ def handle(event, context):
     
     responses = []
     responses.append(joinDailyRecords(storeName, day))
-    responses.append(addPartitions(storeName))
+    responses.append(addPartitions(storeName, day))
     responses.append(uniquePerHour(storeName, day))
     responses.append(totalUnique(storeName, day))
     responses.append(repeatByMac(storeName, day))
@@ -52,9 +52,9 @@ def joinDailyRecords(storeName, day):
     return executeQuery(query, outputLocation)
 
 
-def addPartitions(storeName):
+def addPartitions(storeName, day):
     query = f'MSCK REPAIR TABLE capstone.{storeName}_intermediate'
-    outputLocation = f's3://jolt.capstone/athena-query-logs/{storeName}/junk/dt={day}/s'
+    outputLocation = f's3://jolt.capstone/athena-query-logs/{storeName}/partition-logs/dt={day}/'
     return executeQuery(query, outputLocation)
 
 
