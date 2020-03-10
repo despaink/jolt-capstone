@@ -43,7 +43,7 @@ def constructOutputLocation(storeName, queryName, day):
 # # # # # # # # # # # # # # # # # # 
 def joinDailyRecords(storeName, day): 
     query = (
-        "SELECT mac, min(first_seen), max(last_seen), power "
+        "SELECT mac, min(first_seen) first_seen, max(last_seen) last_seen, power "
         f"FROM {storeName} "
         f"WHERE date(first_seen)=date('{day}') and date(last_seen)=date('{day}') "
         "GROUP BY mac, power"
