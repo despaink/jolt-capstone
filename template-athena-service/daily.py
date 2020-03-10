@@ -53,7 +53,9 @@ def joinDailyRecords(storeName, day):
 
 
 def addPartitions(storeName):
-    query = f'MSCK REPAIR TABLE captone.{storeName}'
+    query = f'MSCK REPAIR TABLE capstone.{storeName}_intermediate'
+    outputLocation = f's3://jolt.capstone/athena-query-logs/{storeName}/junk/dt={day}/s'
+    return executeQuery(query, outputLocation)
 
 
 def uniquePerHour(storeName, day):
