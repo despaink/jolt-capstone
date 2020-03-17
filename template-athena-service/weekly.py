@@ -8,14 +8,13 @@ athena_client = boto3.client('athena')
 # triggered at 4am every Sunday
 def handle(event, context):
     # TODO: extract storeName from event
-    storeName = 'store_name_1'
+    storeName = 'heritage_15'
     day = date.today()
 
     responses = []
     
     responses.append(uniquePerDay(storeName, day))
     responses.append(totalUnique(storeName, day))
-    responses.append(repeatPerDay(storeName, day))
     responses.append(totalRepeat(storeName, day))
     responses.append(averageVisitDurationInMinutes(storeName, day))
     
@@ -42,13 +41,12 @@ def constructOutputLocation(storeName, queryName, day):
 # Query functions
 # # # # # # # # # # # # # # # # # # 
 def uniquePerDay(storeName, day):
-    # I think this is actually just counting the records per day
     query = (
-        "SELECT date(date_trunc('day', first_seen)) time, Count(*) visits "
-		f"FROM {storeName} "
-        f"WHERE extract(week FROM first_seen)=extract(week FROM DATE('{day}'))"
-		"GROUP BY date_trunc('day', first_seen) "
-		"ORDER BY date_trunc('day', first_seen)"
+        "SELECT date(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s')) day, Count(*) visits "
+        f"FROM {storeName} "
+        f"WHERE week(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'))=week(DATE('{day}')) "
+        "GROUP BY date(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s')) "
+        "ORDER BY date(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'))"
     )
 
     outputLocation = constructOutputLocation(storeName, 'unique_per_day_by_week', day)
@@ -56,58 +54,38 @@ def uniquePerDay(storeName, day):
 
 
 # total number of unique mac addresses that have appeared during the scans
-def totalUnique(store, day): 
+def totalUnique(storeName, day): 
     query = (
         "SELECT COUNT(DISTINCT mac) visits "
-        f"FROM {store} "
-        f"WHERE extract(week FROM first_seen)=extract(week FROM DATE('{day}'))"
+        f"FROM {storeName} "
+        f"WHERE week(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'))=week(DATE('{day}'))"
     )
-    outputLocation = constructOutputLocation(store, 'weekly_total_unique', day)
-    return executeQuery(query, outputLocation)
-
-
-# Lists the number of mac addresses per day that appeared more than once in that week
-def repeatPerDay(store, day):
-    query = (
-        "SELECT date(date_trunc('day', first_seen)) time, Count(*) visits "
-        "FROM ( "
-            "SELECT *, COUNT(*) visits "
-            f"FROM {store} "
-            f"WHERE extract(week FROM first_seen)=extract(week FROM DATE('{day}')) "
-            "GROUP BY mac, first_seen, last_seen, power "
-            "HAVING COUNT(*) > 1 "
-            "ORDER BY COUNT(*) DESC "
-        ") "
-        f"WHERE extract(week FROM first_seen)=extract(week FROM DATE('{day}')) "
-        "GROUP BY date_trunc('day', first_seen) "
-        "ORDER BY date_trunc('day', first_seen)"
-    )
-    outputLocation = constructOutputLocation(store, 'weekly_repeat_by_day', day)
+    outputLocation = constructOutputLocation(storeName, 'weekly_total_unique', day)
     return executeQuery(query, outputLocation)
 
 
 # This is repeat customers, not visits. May be worthwhile making the distinction later
-def totalRepeat(store, day):
+def totalRepeat(storeName, day):
     query = (
         "SELECT COUNT(*) repeat_customers "
         "FROM ( "
             "SELECT mac, COUNT(*) visits "
-            f"FROM {store} "
-            f"WHERE extract(week FROM first_seen)=extract(week FROM DATE('{day}')) "
+            f"FROM {storeName} "
+            f"WHERE week(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'))=week(DATE('{day}')) "
             "GROUP BY mac "
             "HAVING COUNT(*) > 1 "
             "ORDER BY COUNT(*) DESC "
         ")"
     )
-    outputLocation = constructOutputLocation(store, 'weekly_total_repeat_customers', day)
+    outputLocation = constructOutputLocation(storeName, 'weekly_total_repeat_customers', day)
     return executeQuery(query, outputLocation)
 
 
-def averageVisitDurationInMinutes(store, day):
+def averageVisitDurationInMinutes(storeName, day):
     query = (
-        "SELECT avg(date_diff('minute', first_seen, last_seen)) duration "
-        f"FROM {store} "
-        f"WHERE extract(week FROM first_seen)=extract(week FROM date('{day}'))"
+        "SELECT avg(date_diff('minute', date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'), date_parse(trim(last_seen), '%Y-%m-%d %H:%i:%s'))) duration "
+        f"FROM {storeName} "
+        f"WHERE week(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'))=week(date('{day}'))"
     )
-    outputLocation = constructOutputLocation(store, 'weekly_avg_duration', day)
+    outputLocation = constructOutputLocation(storeName, 'weekly_avg_duration', day)
     return executeQuery(query, outputLocation)
