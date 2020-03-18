@@ -4,6 +4,8 @@ import logging
 from datetime import date, timedelta
 
 athena_client = boto3.client('athena')
+FIRST_SEEN = "date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s')"
+LAST_SEEN = "date_parse(trim(last_seen), '%Y-%m-%d %H:%i:%s')"
 
 # triggered at 5am every morning
 def handle(event, context):
@@ -44,8 +46,8 @@ def joinDailyRecords(storeName, day):
     query = (
         "SELECT mac, min(first_seen) first_seen, max(last_seen) last_seen, min(power) power "
         f"FROM {storeName}_intermediate "
-        f"WHERE date(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'))=date('{day}') "
-        f"and date(date_parse(trim(last_seen), '%Y-%m-%d %H:%i:%s'))=date('{day}') "
+        f"WHERE date({FIRST_SEEN})=date('{day}') "
+        f"and date({LAST_SEEN})=date('{day}') "
         "GROUP BY mac"
     )
     outputLocation = f's3://jolt.capstone/athena-query-logs/{storeName}/intermediate/dt={day}/'
@@ -60,11 +62,11 @@ def addPartition(storeName, day):
 
 def uniquePerHour(storeName, day):
     query = (
-        "SELECT date_trunc('hour', date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s')) time, Count(*) visits "
+        f"SELECT date_trunc('hour', {FIRST_SEEN}) time, Count(*) visits "
         f"FROM {storeName} "
         f"WHERE dt='{day}' AND \"$PATH\" NOT LIKE '%metadata' "
-        "GROUP BY date_trunc('hour', date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s')) "
-        "ORDER BY date_trunc('hour', date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'))"
+        f"GROUP BY date_trunc('hour', {FIRST_SEEN}) "
+        f"ORDER BY date_trunc('hour', {FIRST_SEEN})"
     )
     outputLocation = constructOutputLocation(storeName, 'unique_per_hour', day)
     return executeQuery(query, outputLocation)
@@ -83,7 +85,7 @@ def totalUnique(storeName, day):
 
 def averageVisitDurationInMinutes(storeName, day): 
     query = (
-        "SELECT avg(date_diff('minute', date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'), date_parse(trim(last_seen), '%Y-%m-%d %H:%i:%s'))) duration "
+        f"SELECT avg(date_diff('minute', {FIRST_SEEN}, {LAST_SEEN})) duration "
         f"FROM {storeName} "
         f"WHERE dt='{day}' AND \"$PATH\" NOT LIKE '%metadata'"
     )

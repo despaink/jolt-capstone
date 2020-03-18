@@ -4,6 +4,8 @@ import logging
 from datetime import date
 
 athena_client = boto3.client('athena')
+FIRST_SEEN = "date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s')"
+LAST_SEEN = "date_parse(trim(last_seen), '%Y-%m-%d %H:%i:%s')"
 
 # triggered at 4am every Sunday
 def handle(event, context):
@@ -42,11 +44,11 @@ def constructOutputLocation(storeName, queryName, day):
 # # # # # # # # # # # # # # # # # # 
 def uniquePerDay(storeName, day):
     query = (
-        "SELECT date(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s')) day, Count(*) visits "
+        f"SELECT date({FIRST_SEEN}) day, Count(*) visits "
         f"FROM {storeName} "
-        f"WHERE week(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'))=week(DATE('{day}')) "
-        "GROUP BY date(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s')) "
-        "ORDER BY date(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'))"
+        f"WHERE week({FIRST_SEEN})=week(DATE('{day}')) AND \"$PATH\" NOT LIKE '%metadata' "
+        f"GROUP BY date({FIRST_SEEN}) "
+        f"ORDER BY date({FIRST_SEEN})"
     )
 
     outputLocation = constructOutputLocation(storeName, 'unique_per_day_by_week', day)
@@ -58,7 +60,7 @@ def totalUnique(storeName, day):
     query = (
         "SELECT COUNT(DISTINCT mac) visits "
         f"FROM {storeName} "
-        f"WHERE week(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'))=week(DATE('{day}'))"
+        f"WHERE week({FIRST_SEEN})=week(DATE('{day}')) AND \"$PATH\" NOT LIKE '%metadata'"
     )
     outputLocation = constructOutputLocation(storeName, 'weekly_total_unique', day)
     return executeQuery(query, outputLocation)
@@ -71,7 +73,7 @@ def totalRepeat(storeName, day):
         "FROM ( "
             "SELECT mac, COUNT(*) visits "
             f"FROM {storeName} "
-            f"WHERE week(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'))=week(DATE('{day}')) "
+            f"WHERE week({FIRST_SEEN})=week(DATE('{day}')) AND \"$PATH\" NOT LIKE '%metadata' "
             "GROUP BY mac "
             "HAVING COUNT(*) > 1 "
             "ORDER BY COUNT(*) DESC "
@@ -83,9 +85,9 @@ def totalRepeat(storeName, day):
 
 def averageVisitDurationInMinutes(storeName, day):
     query = (
-        "SELECT avg(date_diff('minute', date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'), date_parse(trim(last_seen), '%Y-%m-%d %H:%i:%s'))) duration "
+        f"SELECT avg(date_diff('minute', {FIRST_SEEN}, {LAST_SEEN})) duration "
         f"FROM {storeName} "
-        f"WHERE week(date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s'))=week(date('{day}'))"
+        f"WHERE week({FIRST_SEEN})=week(date('{day}')) AND \"$PATH\" NOT LIKE '%metadata'"
     )
     outputLocation = constructOutputLocation(storeName, 'weekly_avg_duration', day)
     return executeQuery(query, outputLocation)

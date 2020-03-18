@@ -4,18 +4,20 @@ import logging
 from datetime import date
 
 athena_client = boto3.client('athena')
+FIRST_SEEN = "date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s')"
+LAST_SEEN = "date_parse(trim(last_seen), '%Y-%m-%d %H:%i:%s')"
 
 # triggered at 3am on the first day of every month
 def handle(event, context):
-    store = 'store_name_1'
+    storeName = 'heritage_15'
     day = date.today()
 
     responses = []
 
-    responses.append(uniquePerWeek(store, day))
-    responses.append(totalUnique(store, day))
-    responses.append(totalRepeat(store, day))
-    responses.append(averageVisitDurationInMinutes(store, day))
+    responses.append(uniquePerWeek(storeName, day))
+    responses.append(totalUnique(storeName, day))
+    responses.append(totalRepeat(storeName, day))
+    responses.append(averageVisitDurationInMinutes(storeName, day))
 
     print(responses)   
     return responses 
@@ -32,56 +34,56 @@ def executeQuery(query, outputLocation):
     )
 
 
-def constructOutputLocation(store, queryName, day):
-    return f's3://jolt.capstone/athena-query-logs/{store}/{queryName}/{day}'
+def constructOutputLocation(storeName, queryName, day):
+    return f's3://jolt.capstone/athena-query-logs/{storeName}/{queryName}/{day}'
 
 
 # # # # # # # # # # # # # # # # # # 
 # Query functions
 # # # # # # # # # # # # # # # # # #
-def uniquePerWeek(store, day):
+def uniquePerWeek(storeName, day):
     query = (
-        "SELECT date(date_trunc('week', first_seen)) time, Count(*) visits "
-		f"FROM {store} "
-        f"WHERE extract(month FROM first_seen)=extract(month FROM DATE('{day}'))"
-		"GROUP BY date_trunc('week', first_seen) "
-		"ORDER BY date_trunc('week', first_seen)"
+        f"SELECT date(date_trunc('week', {FIRST_SEEN})) week, Count(*) visits "
+		f"FROM {storeName} "
+        f"WHERE month({FIRST_SEEN})=month(DATE('{day}')) AND \"$PATH\" NOT LIKE '%metadata' "
+		f"GROUP BY date_trunc('week', {FIRST_SEEN}) "
+		f"ORDER BY date_trunc('week', {FIRST_SEEN})"
     )
-    outputLocation = constructOutputLocation(store, 'monthly_unique_per_week', day)
+    outputLocation = constructOutputLocation(storeName, 'monthly_unique_per_week', day)
     return executeQuery(query, outputLocation)
 
 
-def totalUnique(store, day):
+def totalUnique(storeName, day):
     query = (
         "SELECT COUNT(DISTINCT mac) visits "
-        f"FROM {store} "
-        f"WHERE extract(month FROM first_seen)=extract(month FROM DATE('{day}'))"
+        f"FROM {storeName} "
+        f"WHERE month({FIRST_SEEN})=month(DATE('{day}')) AND \"$PATH\" NOT LIKE '%metadata'"
     )
-    outputLocation = constructOutputLocation(store, 'monthly_total_unique', day)
+    outputLocation = constructOutputLocation(storeName, 'monthly_total_unique', day)
     return executeQuery(query, outputLocation)
 
 
-def totalRepeat(store, day):
+def totalRepeat(storeName, day):
     query = (
         "SELECT COUNT(*) repeat_customers "
         "FROM ( "
             "SELECT mac, COUNT(*) visits "
-            f"FROM {store} "
-            f"WHERE extract(month FROM first_seen)=extract(month FROM DATE('{day}')) "
+            f"FROM {storeName} "
+            f"WHERE month({FIRST_SEEN})=month(DATE('{day}')) AND \"$PATH\" NOT LIKE '%metadata' "
             "GROUP BY mac "
             "HAVING COUNT(*) > 1 "
             "ORDER BY COUNT(*) DESC"
         ")"
     )
-    outputLocation = constructOutputLocation(store, 'monthly_total_repeat', day)
+    outputLocation = constructOutputLocation(storeName, 'monthly_total_repeat', day)
     return executeQuery(query, outputLocation)
 
 
-def averageVisitDurationInMinutes(store, day):
+def averageVisitDurationInMinutes(storeName, day):
     query = (
-        "SELECT avg(date_diff('minute', first_seen, last_seen)) duration "
-        f"FROM {store} "
-        f"WHERE extract(month FROM first_seen)=extract(month FROM date('{day}'))"
+        f"SELECT avg(date_diff('minute', {FIRST_SEEN}, {LAST_SEEN})) duration "
+        f"FROM {storeName} "
+        f"WHERE month({FIRST_SEEN})=month(date('{day}')) AND \"$PATH\" NOT LIKE '%metadata'"
     )
-    outputLocation = constructOutputLocation(store, 'monthly_avg_duration', day)
+    outputLocation = constructOutputLocation(storeName, 'monthly_avg_duration', day)
     return executeQuery(query, outputLocation)
