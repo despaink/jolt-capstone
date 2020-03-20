@@ -11,31 +11,52 @@ functions:
   athena:
     handler: template.template
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
-    #events:
-        #- schedule: cron(0 5 * * ? *)
-          # cron(MIN HOUR DayMonth Month WeekDay Year)
-          # for cron syntax see: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html#CronExpressions 
-        #- cloudwatchLog: '/aws/lambda/template-athena-service-dev'
+    # events:
+    #   - schedule: 
+    #       rate: cron(0 * * * ? *)
+    #       #   cron(MIN HOUR DayMonth Month WeekDay Year)
+    #       input: 
+    #         stores: ['heritage_15', 'sams_house']
+      #- cloudwatchLog: '/aws/lambda/template-athena-service-dev'
 
   daily:
     handler: daily.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     events:
-        - schedule: cron(0 5 * * ? *) # everyday at 5AM
+      - schedule: 
+          name: daily-3am
+          description: 'Runs daily at 3am'
+          rate: cron(0 3 * * ? *) # everyday at 5AM
+          input: 
+            stores: [heritage_15, sams_house]
         #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-daily'
 
   weekly:
     handler: weekly.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     events:
-        - schedule: cron(0 4 ? * SUN *) # every week at 4AM on sunday
+      - schedule: 
+          name: weekly-sun-4am
+          description: 'Runs every Sunday at 4am'
+          rate: cron(0 4 ? * SUN *) # every week at 4AM on sunday
+          input: 
+            stores:
+              - heritage_15
+              - sams_house
         #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-weekly'
 
   monthly:
     handler: monthly.handle
     role: arn:aws:iam::308967763252:role/service-role/Athena_Triggers-role-3qrg6ygo
     events:
-        - schedule: cron(0 3 1 * ? *) # on the first day of every month at 3AM
+        - schedule: 
+          name: monthly-5am
+          description: 'Runs on the first day of every month at 5am'
+          rate: cron(0 5 1 * ? *) # on the first day of every month at 3AM
+          input:
+            stores:
+              - heritage_15
+              - sams_house
         #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-monthly'
 
   campaigns:

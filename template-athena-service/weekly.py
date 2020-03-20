@@ -9,21 +9,23 @@ LAST_SEEN = "date_parse(trim(last_seen), '%Y-%m-%d %H:%i:%s')"
 
 # triggered at 4am every Sunday
 def handle(event, context):
-    # TODO: extract storeName from event
-    storeName = 'heritage_15'
-    day = date.today()
-    #day = "2020-03-8"
-    # day = ( date.today() - timedelta(1) ).strftime('%Y-%m-%d')
-    weekStart = ( day - timedelta(weeks=1) ).strftime('%Y-%m-%d')
-    weekEnd = ( day - timedelta(days=1) ).strftime('%Y-%m-%d')
     responses = []
+
+    for storeName in event.get('stores'):
+        # day = date.today()
+        # day = "2020-03-8"
+        day = ( date.today() - timedelta(1) ).strftime('%Y-%m-%d')
+        weekStart = ( day - timedelta(weeks=1) ).strftime('%Y-%m-%d')
+        weekEnd = ( day - timedelta(days=1) ).strftime('%Y-%m-%d')
+        res = [storeName]
+        
+        res.append(uniquePerDay(storeName, day, weekStart, weekEnd))
+        res.append(totalUnique(storeName, day, weekStart, weekEnd))
+        res.append(totalRepeat(storeName, day, weekStart, weekEnd))
+        res.append(averageVisitDurationInMinutes(storeName, day, weekStart, weekEnd))
+
+        responses.append(res)
     
-    responses.append(uniquePerDay(storeName, day, weekStart, weekEnd))
-    responses.append(totalUnique(storeName, day, weekStart, weekEnd))
-    responses.append(totalRepeat(storeName, day, weekStart, weekEnd))
-    responses.append(averageVisitDurationInMinutes(storeName, day, weekStart, weekEnd))
-    
-    print(responses)
     return responses
 
 

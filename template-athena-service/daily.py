@@ -9,19 +9,21 @@ LAST_SEEN = "date_parse(trim(last_seen), '%Y-%m-%d %H:%i:%s')"
 
 # triggered at 5am every morning
 def handle(event, context):
-    # extract storeName from event?
-    storeName = 'sams_house'
-    # day = ( date.today() - timedelta(1) ).strftime('%Y-%m-%d')
-    day = "2020-03-15"
-    
     responses = []
-    responses.append(joinDailyRecords(storeName, day))
-    responses.append(addPartition(storeName, day))
-    responses.append(uniquePerHour(storeName, day))
-    responses.append(totalUnique(storeName, day))
-    responses.append(averageVisitDurationInMinutes(storeName, day))
+
+    for storeName in event.get('stores'):
+        day = ( date.today() - timedelta(1) ).strftime('%Y-%m-%d')
+        # day = "2020-03-15"
+        
+        res = [storeName]
+        res.append(joinDailyRecords(storeName, day))
+        res.append(addPartition(storeName, day))
+        res.append(uniquePerHour(storeName, day))
+        res.append(totalUnique(storeName, day))
+        res.append(averageVisitDurationInMinutes(storeName, day))
+        
+        responses.append(res)
     
-    #print(responses)
     return responses
 
 

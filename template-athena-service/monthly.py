@@ -7,19 +7,21 @@ athena_client = boto3.client('athena')
 FIRST_SEEN = "date_parse(trim(first_seen), '%Y-%m-%d %H:%i:%s')"
 LAST_SEEN = "date_parse(trim(last_seen), '%Y-%m-%d %H:%i:%s')"
 
-# triggered at 3am on the first day of every month
+# triggered at 5am on the first day of every month
 def handle(event, context):
-    storeName = 'heritage_15'
-    day = date.today()
-
     responses = []
+    for storeName in event.get('store'):
+        day = date.today()
 
-    responses.append(uniquePerWeek(storeName, day))
-    responses.append(totalUnique(storeName, day))
-    responses.append(totalRepeat(storeName, day))
-    responses.append(averageVisitDurationInMinutes(storeName, day))
+        res = [storeName]
 
-    print(responses)   
+        res.append(uniquePerWeek(storeName, day))
+        res.append(totalUnique(storeName, day))
+        res.append(totalRepeat(storeName, day))
+        res.append(averageVisitDurationInMinutes(storeName, day))
+
+        responses.append(res)
+
     return responses 
 
 
