@@ -14,7 +14,7 @@ def handle(event, context):
     for storeName in event.get('stores'):
         # day = date.today()
         # day = "2020-03-8"
-        day = ( date.today() - timedelta(1) ).strftime('%Y-%m-%d')
+        day = date.today()
         weekStart = ( day - timedelta(weeks=1) ).strftime('%Y-%m-%d')
         weekEnd = ( day - timedelta(days=1) ).strftime('%Y-%m-%d')
         res = [storeName]
