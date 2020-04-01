@@ -28,7 +28,7 @@ functions:
           description: 'Runs daily at 3am'
           rate: cron(0 3 * * ? *) # everyday at 5AM
           input: 
-            stores: [heritage_15, sams_house]
+            stores: [heritage_15, heritage_16, sams_house]
         #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-daily'
 
   weekly:
@@ -42,6 +42,7 @@ functions:
           input: 
             stores:
               - heritage_15
+              - heritage_16
               - sams_house
         #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-weekly'
 
@@ -56,6 +57,7 @@ functions:
           input:
             stores:
               - heritage_15
+              - heritage_16
               - sams_house
         #- cloudwatchLog: '/aws/lambda/template-athena-service-dev-monthly'
 
