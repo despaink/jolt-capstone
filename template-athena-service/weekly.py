@@ -11,9 +11,9 @@ LAST_SEEN = "date_parse(trim(last_seen), '%Y-%m-%d %H:%i:%s')"
 def handle(event, context):
     responses = []
 
-    for storeName in event.get('stores'):
-        # day = date.today()
-        # day = "2020-03-8"
+    stores = event.get('stores')
+    for storeName in stores:
+        # day = date(2020, 4, 5)
         day = date.today()
         weekStart = ( day - timedelta(weeks=1) ).strftime('%Y-%m-%d')
         weekEnd = ( day - timedelta(days=1) ).strftime('%Y-%m-%d')
@@ -23,6 +23,7 @@ def handle(event, context):
         res.append(totalUnique(storeName, day, weekStart, weekEnd))
         res.append(totalRepeat(storeName, day, weekStart, weekEnd))
         res.append(averageVisitDurationInMinutes(storeName, day, weekStart, weekEnd))
+        res.append(weeklyCrossover(storeName, stores, day, weekStart, weekEnd))
 
         responses.append(res)
     
@@ -95,4 +96,44 @@ def averageVisitDurationInMinutes(storeName, day, weekStart, weekEnd):
         f"WHERE dt between '{weekStart}' and '{weekEnd}' AND \"$PATH\" NOT LIKE '%metadata'"
     )
     outputLocation = constructOutputLocation(storeName, 'weekly_avg_duration', day)
+    return executeQuery(query, outputLocation)
+
+def weeklyCrossover(storeName, stores, day, weekStart, weekEnd):
+    query = (
+        f"SELECT count(distinct mac) num_devices "
+        f"FROM {storeName} "
+        f"WHERE dt BETWEEN '{weekStart}' AND '{weekEnd}' " 
+        f"AND {storeName}.\"$PATH\" NOT LIKE '%metadata' "
+    )
+
+    storeCount = 0
+    for store in stores:
+        if store != storeName:
+            storeCount += 1
+
+    if storeCount > 0:
+        storesProcessed = 0
+
+        for store in stores:
+            if store == storeName: 
+                continue
+
+            if storesProcessed == 0:
+                query += "AND ("
+            else:
+                query += "OR "
+
+            query += (
+                "EXISTS ("
+                f"SELECT mac from {store} "
+                f"WHERE dt BETWEEN '{weekStart}' AND '{weekEnd}' "
+                f"AND {store}.mac={storeName}.mac "
+                f"AND {store}.\"$PATH\" NOT LIKE '%metadata') "
+            )
+
+            storesProcessed += 1
+        query += ") "
+
+    outputLocation = constructOutputLocation(storeName, "weekly_crossover", day)
+    print(query)
     return executeQuery(query, outputLocation)
