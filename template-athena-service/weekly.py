@@ -24,6 +24,7 @@ def handle(event, context):
         res.append(totalRepeat(storeName, day, weekStart, weekEnd))
         res.append(averageVisitDurationInMinutes(storeName, day, weekStart, weekEnd))
         res.append(weeklyCrossover(storeName, stores, day, weekStart, weekEnd))
+        res.append(totalCrossover(storeName, stores, day, weekStart, weekEnd))
 
         responses.append(res)
     
@@ -135,5 +136,41 @@ def weeklyCrossover(storeName, stores, day, weekStart, weekEnd):
         query += ") "
 
     outputLocation = constructOutputLocation(storeName, "weekly_crossover", day)
-    print(query)
+    return executeQuery(query, outputLocation)
+
+def totalCrossover(storeName, stores, day, weekStart, weekEnd):
+    query = (
+        f"SELECT count(distinct mac) num_devices "
+        f"FROM {storeName} "
+        f"WHERE {storeName}.\"$PATH\" NOT LIKE '%metadata' "
+    )
+
+    storeCount = 0
+    for store in stores:
+        if store != storeName:
+            storeCount += 1
+
+    if storeCount > 0:
+        storesProcessed = 0
+
+        for store in stores:
+            if store == storeName: 
+                continue
+
+            if storesProcessed == 0:
+                query += "AND ("
+            else:
+                query += "OR "
+
+            query += (
+                "EXISTS ("
+                f"SELECT mac from {store} "
+                f"WHERE {store}.mac={storeName}.mac "
+                f"AND {store}.\"$PATH\" NOT LIKE '%metadata') "
+            )
+
+            storesProcessed += 1
+        query += ") "
+
+    outputLocation = constructOutputLocation(storeName, "total_crossover", day)
     return executeQuery(query, outputLocation)
